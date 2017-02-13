@@ -41,7 +41,7 @@ module Plist::Emit
   # +IO+ and +StringIO+ objects are encoded and placed in <data> elements; other objects are <tt>Marshal.dump</tt>'ed unless they implement +to_plist_node+.
   #
   # The +envelope+ parameters dictates whether or not the resultant plist fragment is wrapped in the normal XML/plist header and footer.  Set it to false if you only want the fragment.
-  def self.dump(obj, options = nil, envelope = true)
+  def self.dump(obj, envelope = true, options = nil)
     output = plist_node(obj, options)
 
     output = wrap(output) if envelope
