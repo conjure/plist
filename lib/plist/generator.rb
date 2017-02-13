@@ -24,13 +24,13 @@ module Plist ; end
 # For detailed usage instructions, refer to USAGE[link:files/docs/USAGE.html] and the methods documented below.
 module Plist::Emit
   # Helper method for injecting into classes.  Calls <tt>Plist::Emit.dump</tt> with +self+.
-  def to_plist(envelope = true)
-    return Plist::Emit.dump(self, envelope)
+  def to_plist(envelope = true, options = nil)
+    return Plist::Emit.dump(self, envelope, options)
   end
 
   # Helper method for injecting into classes.  Calls <tt>Plist::Emit.save_plist</tt> with +self+.
   def save_plist(filename)
-    Plist::Emit.save_plist(self, filename)
+    Plist::Emit.save_plist(self, filename, options)
   end
 
   # The following Ruby classes are converted into native plist types:
@@ -41,8 +41,8 @@ module Plist::Emit
   # +IO+ and +StringIO+ objects are encoded and placed in <data> elements; other objects are <tt>Marshal.dump</tt>'ed unless they implement +to_plist_node+.
   #
   # The +envelope+ parameters dictates whether or not the resultant plist fragment is wrapped in the normal XML/plist header and footer.  Set it to false if you only want the fragment.
-  def self.dump(obj, envelope = true)
-    output = plist_node(obj)
+  def self.dump(obj, envelope = true, options = nil)
+    output = plist_node(obj, options)
 
     output = wrap(output) if envelope
 
@@ -50,18 +50,18 @@ module Plist::Emit
   end
 
   # Writes the serialized object's plist to the specified filename.
-  def self.save_plist(obj, filename)
+  def self.save_plist(obj, filename, options = nil)
     File.open(filename, 'wb') do |f|
-      f.write(obj.to_plist)
+      f.write(obj.to_plist(options))
     end
   end
 
   private
-  def self.plist_node(element)
+  def self.plist_node(element, options)
     output = ''
 
     if element.respond_to? :to_plist_node
-      output << element.to_plist_node
+      output << element.to_plist_node(options)
     else
       case element
       when Array
@@ -69,7 +69,7 @@ module Plist::Emit
           output << "<array/>\n"
         else
           output << tag('array') {
-            element.collect {|e| plist_node(e)}
+            element.collect {|e| plist_node(e, options)}
           }
         end
       when Hash
@@ -81,7 +81,7 @@ module Plist::Emit
           element.keys.sort_by{|k| k.to_s }.each do |k|
             v = element[k]
             inner_tags << tag('key', CGI::escapeHTML(k.to_s))
-            inner_tags << plist_node(v)
+            inner_tags << plist_node(v, options)
           end
 
           output << tag('dict') {
